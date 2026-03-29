@@ -17,6 +17,9 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:${KAFKA_PORT}
+    consumer:
+      group-id: eventhub-group
+      auto-offset-reset: earliest
 
 
 
