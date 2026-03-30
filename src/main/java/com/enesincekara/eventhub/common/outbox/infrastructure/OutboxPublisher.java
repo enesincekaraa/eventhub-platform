@@ -2,6 +2,7 @@ package com.enesincekara.eventhub.common.outbox.infrastructure;
 
 import com.enesincekara.eventhub.common.event.EventTopics;
 import com.enesincekara.eventhub.common.kafka.KafkaProducer;
+import com.enesincekara.eventhub.common.outbox.constants.OutboxConstants;
 import com.enesincekara.eventhub.common.outbox.domain.OutboxEvent;
 import com.enesincekara.eventhub.user.domain.User;
 import com.enesincekara.eventhub.user.domain.event.UserRegisteredEvent;
@@ -47,8 +48,15 @@ public class OutboxPublisher {
             }
 
             catch (Exception e) {
-                log.error("Event gönderilirken hata oluştu! Event ID: {}. Hata: {}",
-                        outboxEvent.getId(), e.getMessage());
+                outboxEvent.increaseRetry();
+                if (outboxEvent.getRetryCount()>= OutboxConstants.MAX_RETRY){
+                    log.error("Event DLQ'ya gönderiliyor : {}", outboxEvent.getId());
+                    kafkaProducer.sendMessage(EventTopics.USER_REGISTERED_DLQ, outboxEvent.getPayload());
+                    outboxEvent.markProcessed();
+                }
+                else {
+                    log.warn("Retry {} for event {}", outboxEvent.getRetryCount(), outboxEvent.getId());
+                }
             }
         }
     }

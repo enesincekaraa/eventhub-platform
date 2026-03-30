@@ -22,7 +22,7 @@ public class OutboxEvent {
     private String payload;
     private boolean processed;
 
-    private int retry_count;
+    private int retryCount;
 
     protected OutboxEvent() {}
 
@@ -40,7 +40,7 @@ public class OutboxEvent {
         this.processed = true;
     }
     public void increaseRetry(){
-        this.retry_count++;
+        this.retryCount++;
     }
 
 }
