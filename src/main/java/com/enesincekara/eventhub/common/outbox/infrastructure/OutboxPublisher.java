@@ -23,7 +23,7 @@ public class OutboxPublisher {
     private final KafkaProducer kafkaProducer;
     private final ObjectMapper objectMapper;
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedDelay = 5000)
     public void publish() {
         List<OutboxEvent> outboxEvents = outboxRepository.findByProcessedFalse();
         if (outboxEvents.isEmpty()){
