@@ -22,6 +22,8 @@ public class OutboxEvent {
     private String payload;
     private boolean processed;
 
+    private int retry_count;
+
     protected OutboxEvent() {}
 
     public OutboxEvent(String aggregateType, String aggregateId, String type, String payload) {
@@ -36,6 +38,9 @@ public class OutboxEvent {
 
     public void markProcessed() {
         this.processed = true;
+    }
+    public void increaseRetry(){
+        this.retry_count++;
     }
 
 }
