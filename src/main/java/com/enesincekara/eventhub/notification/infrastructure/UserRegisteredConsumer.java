@@ -1,5 +1,6 @@
 package com.enesincekara.eventhub.notification.infrastructure;
 
+import com.enesincekara.eventhub.common.event.EventTopics;
 import com.enesincekara.eventhub.notification.application.NotificationService;
 import com.enesincekara.eventhub.notification.domain.Notification;
 import com.enesincekara.eventhub.user.domain.event.UserRegisteredEvent;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class UserRegisteredConsumer {
     private final NotificationService notificationService;
 
-    @KafkaListener(topics = "user.registered",groupId = "eventhub-group")
+    @KafkaListener(topics = EventTopics.USER_REGISTERED,groupId = "eventhub-group")
     public void consume(UserRegisteredEvent event ) {
 
         Notification notification = new Notification(
