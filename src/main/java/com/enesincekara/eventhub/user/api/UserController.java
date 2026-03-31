@@ -3,6 +3,7 @@ package com.enesincekara.eventhub.user.api;
 import com.enesincekara.eventhub.user.api.dto.RegisterUserRequest;
 import com.enesincekara.eventhub.user.application.RegisterUserService;
 import com.enesincekara.eventhub.user.domain.User;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,7 +17,7 @@ public class UserController {
     private final RegisterUserService registerUserService;
 
     @PostMapping
-    public User registerUser(@RequestBody RegisterUserRequest req) {
+    public User registerUser(@Valid @RequestBody RegisterUserRequest req) {
         return registerUserService.registerUser(
                 req.email(),
                 req.password()

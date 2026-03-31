@@ -1,5 +1,6 @@
 package com.enesincekara.eventhub.user.domain;
 
+import com.enesincekara.eventhub.common.error.DomainException;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -30,16 +31,16 @@ public class User {
 
     private static void validateEmail(String email) {
         if (email ==  null || email.isBlank()) {
-            throw new IllegalArgumentException("Email boş olamaz");
+            throw new DomainException();
         }
         if (!email.contains("@")) {
-            throw new IllegalArgumentException("Geçersiz email formatı");
+            throw new DomainException();
         }
     }
 
     private static void validatePassword(String password) {
         if (password == null || password.length() < 6) {
-            throw new IllegalArgumentException("Şifre en az 6 karakter olmalı");
+            throw new DomainException();
         }
     }
 

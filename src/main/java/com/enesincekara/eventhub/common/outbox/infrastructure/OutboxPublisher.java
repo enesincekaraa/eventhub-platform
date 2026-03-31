@@ -2,7 +2,9 @@ package com.enesincekara.eventhub.common.outbox.infrastructure;
 
 import com.enesincekara.eventhub.common.event.EventTopics;
 import com.enesincekara.eventhub.common.kafka.KafkaProducer;
+import com.enesincekara.eventhub.common.outbox.constants.OutboxConstants;
 import com.enesincekara.eventhub.common.outbox.domain.OutboxEvent;
+import com.enesincekara.eventhub.common.outbox.domain.OutboxStatus;
 import com.enesincekara.eventhub.user.domain.User;
 import com.enesincekara.eventhub.user.domain.event.UserRegisteredEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,35 +25,37 @@ public class OutboxPublisher {
     private final KafkaProducer kafkaProducer;
     private final ObjectMapper objectMapper;
 
-    @Scheduled(fixedRate = 5000)
-    public void publish() {
-        List<OutboxEvent> outboxEvents = outboxRepository.findByProcessedFalse();
-        if (outboxEvents.isEmpty()){
-            return;
-        }
 
-        log.info("{} adet bekleyen event bulundu. Gönderim başlıyor...", outboxEvents.size());
+    @Scheduled(fixedRate = 50000)
+    public void publish(){
+        List<OutboxEvent> outboxEvents = outboxRepository.findByStatus(OutboxStatus.PENDING);
 
         for (OutboxEvent outboxEvent : outboxEvents) {
             try {
+                UserRegisteredEvent event;
 
-                UserRegisteredEvent event = convertPayload(outboxEvent.getPayload(), UserRegisteredEvent.class);
-
-                kafkaProducer.sendMessage(EventTopics.USER_REGISTERED, event);
-
+                try {
+                    event=convertPayload(outboxEvent.getPayload(), UserRegisteredEvent.class);
+                }catch (Exception e) {
+                    log.error("Kritik Veri Hatası! Mesaj bozuk, DLQ'ya alınıyor: {}", outboxEvent.getId());
+                    outboxEvent.markFailed(e.getMessage());
+                    outboxRepository.save(outboxEvent);
+                    sendAlarmVeriHatasi(outboxEvent,e.getMessage());
+                    continue;
+                }
+                kafkaProducer.sendMessage(EventTopics.USER_REGISTERED,event);
                 outboxEvent.markProcessed();
-
                 outboxRepository.save(outboxEvent);
-
                 log.info("Event başarıyla gönderildi: {}", outboxEvent.getId());
-            }
-
-            catch (Exception e) {
-                log.error("Event gönderilirken hata oluştu! Event ID: {}. Hata: {}",
-                        outboxEvent.getId(), e.getMessage());
+            }catch (Exception e){
+                log.warn("Kafka'ya ulaşılamıyor, bir sonraki denemede tekrar denenecek: {}", outboxEvent.getId());
+                sendAlarmKafkaHatasi(outboxEvent,e.getMessage());
+                break;
             }
         }
     }
+
+
 
 
     private <T> T  convertPayload(String payload,Class<T> targetClass) {
@@ -62,5 +66,22 @@ public class OutboxPublisher {
             throw new RuntimeException("JSON dönüşüm hatası: " + e.getMessage());
         }
 
+    }
+
+
+    private void sendAlarmVeriHatasi(OutboxEvent outboxEvent,String reason){
+        log.error("**************************************************");
+        log.error("!!! ACİL DURUM: OUTBOX MESAJI ");
+        log.error("ID: {}", outboxEvent.getId());
+        log.error("Neden: {}", reason);
+        log.error("**************************************************");
+    }
+    private void sendAlarmKafkaHatasi(OutboxEvent outboxEvent, String message) {
+        log.error("**************************************************");
+        log.error("!!! ACİL DURUM: OUTBOX MESAJI ");
+        log.error("Kafkaya Ulaşılamıyor");
+        log.error("ID: {}", outboxEvent.getId());
+        log.error("Neden: {}", message);
+        log.error("**************************************************");
     }
 }

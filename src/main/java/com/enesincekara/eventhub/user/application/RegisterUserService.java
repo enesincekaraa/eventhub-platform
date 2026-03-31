@@ -1,5 +1,6 @@
 package com.enesincekara.eventhub.user.application;
 
+import com.enesincekara.eventhub.common.error.AlreadyExistsException;
 import com.enesincekara.eventhub.common.outbox.domain.OutboxEvent;
 import com.enesincekara.eventhub.common.outbox.infrastructure.OutboxRepository;
 import com.enesincekara.eventhub.user.domain.User;
@@ -23,7 +24,7 @@ public class RegisterUserService {
     @Transactional
     public User registerUser(String email,String password){
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalStateException("Email zaten kayıtlı");
+            throw new AlreadyExistsException();
         }
         User user = User.create(email, password);
         User saved = userRepository.save(user);

@@ -1,9 +1,6 @@
 package com.enesincekara.eventhub.common.outbox.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.UUID;
@@ -20,7 +17,13 @@ public class OutboxEvent {
 
     @Column(columnDefinition = "TEXT")
     private String payload;
-    private boolean processed;
+
+    @Enumerated(EnumType.STRING)
+    private OutboxStatus status = OutboxStatus.PENDING;
+
+    private String errorMessage;
+
+    private int retryCount;
 
     protected OutboxEvent() {}
 
@@ -30,12 +33,20 @@ public class OutboxEvent {
         this.aggregateId = aggregateId;
         this.type = type;
         this.payload = payload;
-        this.processed = false;
     }
 
 
     public void markProcessed() {
-        this.processed = true;
+        this.status = OutboxStatus.PROCESSED;
+        this.errorMessage = null;
+    }
+
+    public void markFailed(String error) {
+        this.status = OutboxStatus.FAILED;
+        this.errorMessage = error;
+    }
+    public void increaseRetry(){
+        this.retryCount++;
     }
 
 }
